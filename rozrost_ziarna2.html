@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+td {
+	border:1px solid black;
+	vertical-align:middle;
+	text-align:center;
+}
+.filled {
+	background-color:red;
+}
+table {
+	border-collapse: collapse;
+	width:100%;
+
+}
+.contener {
+	width:50%;
+	margin-left: auto;
+    margin-right: auto;
+		text-align:center;
+
+}
+
+redbg {
+	background-color:red;
+}
+
+form{
+	width:50%;
+	margin-left: auto;
+    margin-right: auto;
+	text-align:center;
+}
+
+.center{
+	width:50%;
+	margin-left: auto;
+    margin-right: auto;
+		text-align:center;
+}
+</style>
+<meta charset="UTF-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<title>Page Title</title>
+</head>
+<body>
+<form>
+	<label>Szerokość:</label>
+	<input type="number" min="1" id="szerokosc" type="text" name="length" /></br>
+	<label>Długość</label>
+	<input type="number" min="1" id="dlugosc" type="text" name="periods" /></br>
+	<label>Zarodkowanie</label>
+	<select id="metoda" placeholder="Wybierz stan początkowy">
+		<option selected disabled hidden></option>
+		<option value="jednorodna">Jednorodne</option>
+		<option value="promien">Z promieniem</option>
+		<option value="recznie">Ręczny wybór</option>
+		<option value="losowy">Losowe</option>
+	</select><br>
+	<input id="promien" type="text" name="promien" placeholder="podaj promień(jako ilosc komórek)"" /></br>
+	<label>Warunek brzegowy</label>
+	<select id="stan" placeholder="Wybierz warunek brzegowy">
+		<option selected disabled hidden></option>
+		<option value="abs">Absorbujący</option>
+		<option value="period">Periodyczny</option>
+	</select><br>
+	<label>Sasiedztwo</label>
+	<select id="sasiedztwo" placeholder="Wybierz sąsiedztwo">
+		<option selected disabled hidden></option>
+		<option value="neuman">Von Neumana</option>
+		<option value="more">Moore'a</option>
+		<option value="penta">Pentagonalne</option>
+		<option value="heksaL">Heksagonalne lewe</option>
+		<option value="heksaP">Heksagonalne prawe</option>
+		<option value="heksaLos">Heksagonalne losowe</option>
+	</select><br>
+	<label>Czas iteracji (ms)</label>
+	<input type="number" min="1" id="time" type="text" name="time" /></br>
+	<input id="zarodki" type="text" name="zarodki" placeholder="wpisz ilosc zarodkow" /></br>
+	<button id="start">Renderuj</button>
+</form>
+</br><hr/></br>
+<div class="center">
+	<button id="start_game">Start</button>
+</div><br/>
+<div class="contener">
+</div>
+</body>
+</html> 
+<script type="text/javascript">
+$(function(){
+	var interwal;
+	var table = [];
+	var table_old = [];
+	var width;
+	var height;
+	var zarodki = 0;
+	var color = [];
+	var warunki;
+	var stan;
+	var color = [];
+	$('#start').on('click', function(e){
+		zarodki = 0;
+		e.preventDefault();
+		//clearInterval(interwal);
+		var td = $('.contener').find( "td" );
+		td.unbind("click", changeState);
+		$('.contener').empty();
+		//var button = $('<button id="start_game">Start</button>');
+		//$('.contener').append(button);
+		//$(document).on("click", "#start_game" , start_game);
+		width = parseInt($('#szerokosc').val());
+		height = parseInt($('#dlugosc').val());
+		stan = $('#metoda').val();
+		warunki = $('#stan').val();
+		if(stan == 'losowy' || stan == 'promien' || stan == 'recznie')
+			zarodki = parseInt($('#zarodki').val());
+		else if(stan == 'jednorodna')
+			zarodki = parseInt($('#zarodki').val().split('x')[0]) * parseInt($('#zarodki').val().split('x')[1]);
+		setColors();
+		for(var i=0;i< height+2;++i){
+			table[i] =[];
+			table_old[i] =[];
+			for(var j=0;j< width+2;++j){
+				table[i][j] = 0;
+				table_old[i][j] = 0;
+
+			}
+		}
+		switch(stan){
+			case 'jednorodna':
+				render(height, width, table);
+				jednorodna(table, height, width);
+				break;
+			case 'promien':
+				niezmienne(table, height, width);
+				render(height, width, table);
+				break;				
+			case 'recznie':
+				render(height, width, table);
+				recznie(table, height, width);
+				break;				
+			case 'losowy':
+				render(height, width, table);
+				losowy(table, height, width);
+				break;
+		}
+	});
+
+	function render(periods, len, table){
+		var map = '<table style="">';
+		var height = (parseInt($('.contener').css('width').replace('px', '')) / len) - 4;
+		for(var i=1;i< periods + 1;++i){
+			var row = '<tr>';
+			for(var j=1;j< len + 1;++j){
+				if(table[i][j] == 1){
+					var cell = '<td data-row="' + i + '" data-column="' + j + '" style="background-color:black;></td>';
+				}
+				else{
+					var cell = '<td data-row="' + i + '" data-column="' + j + '"></td>';
+				}
+				row += cell;
+			}
+			row += '</tr>';
+			map += row;
+		}
+		map += '</table>';
+		$('.contener').append(map);
+		var td = $('.contener').find( "td" );
+		td.bind("click", changeState);
+		td.css("height", td.css("width"));
+	}
+	
+	function jednorodna(table, height, width){
+		var wi =parseInt($('#zarodki').val().split('x')[0]);
+		var hi =parseInt($('#zarodki').val().split('x')[1]);
+		var h = parseInt((width + 1)/hi);
+		var w = parseInt((height + 1)/wi);
+		for(var i=1;i < wi + 1;++i){
+			for(var j=1;j < hi + 1;++j){
+				table[(i*w)-parseInt(0.5*w)][(j*h)-parseInt(0.5*h)] = ((i-1)*wi)+j;
+				$('.contener').find('table').find('tr').eq((i*w)-parseInt(0.5*w)-1).find('td').eq((j*h)-parseInt(0.5*h)-1).css("background-color", color[((i-1)*wi)+j]);
+			}
+		}
+	}
+	
+	function promień(table, height, width){
+		var tableRender
+		for(var i=0;i< height+2;++i){
+			tableRender[i] =[];
+			for(var j=0;j< width+2;++j){
+				tableRender[i][j] = 0;
+			}
+		}
+		while(zarodki > 0){
+			
+		}
+	}
+	
+	function recznie(table, height, width){
+	
+	}
+	
+	function losowy(table, height, width){
+		var x;
+		var y;
+		for(var i=1;i<zarodki+1;++i){
+			x = Math.floor(Math.random() * width);
+			y = Math.floor(Math.random() * height);
+			table[y+1][x+1] = i;
+			$('.contener').find('table').find('tr').eq(y).find('td').eq(x).css("background-color", color[i]);
+
+		}
+	}
+	
+	function changeState(){
+		if(zarodki > 0){
+			x = $(this).data('column');
+			y = $(this).data('row');
+			$('.contener').find('table').find('tr').eq(y-1).find('td').eq(x-1).css("background-color", color[zarodki]);
+			table[y][x] = zarodki;
+			zarodki--;
+		}else{
+			alert('wykorzystales zarodki');
+		}
+		
+	}
+	
+	$('#start_game').on('click', function(e){
+		if($('#start_game').text() == 'Start'){
+			var time = $('#time').val();
+			interwal = setInterval(reRender, time);
+			$('#start_game').text('Stop');
+		}else{
+			clearInterval(interwal); // stop the interval
+			$('#start_game').text('Start');
+		}
+	});
+	
+	function reRender(){
+		for(var i=0;i< height + 2;++i){
+			for(var j=0;j< width + 2;++j){	
+				table_old[i][j] = table[i][j];
+			}
+		}
+		for(var i=1;i< height + 1;++i){
+			for(var j=1;j< width + 1;++j){	
+				if(!table[i][j]){
+					var neighbour = countNeighbour(i, j);
+					table[i][j] = neighbour;
+					$('.contener').find('table').find('tr').eq(i-1).find('td').eq(j-1).css("background-color", color[neighbour]);
+				}
+			}
+		}
+		if(warunki == 'period'){
+			table[0][0] = table[height][width];
+			table[height + 1][width + 1] = table[1][1];
+			table[0][width + 1] = table[height][1];
+			table[height + 1][0] = table[1][width];
+			for(i = 1; i < width +1;++i){
+				table[0][i] = table[height][i];
+				table[height+1][i] = table[1][i];
+			}
+			for(i = 1; i < height +1;++i){
+				table[i][0] = table[i][width];
+				table[i][width+1] = table[i][1];
+			}
+		}
+	}
+	
+	function countNeighbour(i, j){
+		var neighbours = [];
+		for(var k = 0;k < color.length; ++k){
+			neighbours[k] = 0;
+		}		
+		var sasiedztwo = $('#sasiedztwo').val();
+		switch(sasiedztwo){
+			case 'neuman':
+				if(table_old[i-1][j])
+					neighbours[table[i-1][j]] += 1;
+				if(table_old[i+1][j])
+					neighbours[table[i+1][j]] += 1;
+				if(table_old[i][j-1])
+					neighbours[table[i][j-1]] += 1;
+				if(table_old[i][j+1])
+					neighbours[table[i][j+1]] += 1;
+				break;
+			case 'more':
+				if(table_old[i-1][j])
+					neighbours[table[i-1][j]] += 1;
+				if(table_old[i+1][j])
+					neighbours[table[i+1][j]] += 1;
+				if(table_old[i][j-1])
+					neighbours[table[i][j-1]] += 1;
+				if(table_old[i][j+1])
+					neighbours[table[i][j+1]] += 1;
+				if(table_old[i-1][j-1])
+					neighbours[table[i-1][j-1]] += 1;
+				if(table_old[i-1][j+1])
+					neighbours[table[i-1][j+1]] += 1;
+				if(table_old[i+1][j-1])
+					neighbours[table[i+1][j-1]] += 1;
+				if(table_old[i+1][j+1])
+					neighbours[table[i+1][j+1]] += 1;
+				break;
+			case 'penta':
+				var los = Math.floor(Math.random() * 4);
+				switch(los){
+						//dolne
+					case 0:
+						if(table_old[i+1][j])
+							neighbours[table[i+1][j]] += 1;
+						if(table_old[i][j-1])
+							neighbours[table[i][j-1]] += 1;
+						if(table_old[i][j+1])
+							neighbours[table[i][j+1]] += 1;
+						if(table_old[i+1][j-1])
+							neighbours[table[i+1][j-1]] += 1;
+						if(table_old[i+1][j+1])
+							neighbours[table[i+1][j+1]] += 1;
+						break;
+						//gorne
+					case 1:
+						if(table_old[i-1][j])
+							neighbours[table[i-1][j]] += 1;
+						if(table_old[i][j-1])
+							neighbours[table[i][j-1]] += 1;
+						if(table_old[i][j+1])
+							neighbours[table[i][j+1]] += 1;
+						if(table_old[i-1][j-1])
+							neighbours[table[i-1][j-1]] += 1;
+						if(table_old[i-1][j+1])
+							neighbours[table[i-1][j+1]] += 1;
+						break;
+						//prawe
+					case 2:
+						if(table_old[i-1][j])
+							neighbours[table[i-1][j]] += 1;
+						if(table_old[i+1][j])
+							neighbours[table[i+1][j]] += 1;
+						if(table_old[i][j+1])
+							neighbours[table[i][j+1]] += 1;
+						if(table_old[i-1][j+1])
+							neighbours[table[i-1][j+1]] += 1;
+						if(table_old[i+1][j+1])
+							neighbours[table[i+1][j+1]] += 1;
+						break;
+					case 3:
+						//lewe
+						if(table_old[i-1][j])
+							neighbours[table[i-1][j]] += 1;
+						if(table_old[i+1][j])
+							neighbours[table[i+1][j]] += 1;
+						if(table_old[i][j-1])
+							neighbours[table[i][j-1]] += 1;
+						if(table_old[i-1][j-1])
+							neighbours[table[i-1][j-1]] += 1;
+						if(table_old[i+1][j-1])
+							neighbours[table[i+1][j-1]] += 1;
+						break;
+				}
+				break;
+			case 'heksaL':
+				if(table_old[i-1][j])
+					neighbours[table[i-1][j]] += 1;
+				if(table_old[i+1][j])
+					neighbours[table[i+1][j]] += 1;
+				if(table_old[i][j-1])
+					neighbours[table[i][j-1]] += 1;
+				if(table_old[i][j+1])
+					neighbours[table[i][j+1]] += 1;
+				if(table_old[i-1][j+1])
+					neighbours[table[i-1][j+1]] += 1;
+				if(table_old[i+1][j-1])
+					neighbours[table[i+1][j-1]] += 1;
+				break;
+			case 'heksaP':
+				if(table_old[i-1][j])
+					neighbours[table[i-1][j]] += 1;
+				if(table_old[i+1][j])
+					neighbours[table[i+1][j]] += 1;
+				if(table_old[i][j-1])
+					neighbours[table[i][j-1]] += 1;
+				if(table_old[i][j+1])
+					neighbours[table[i][j+1]] += 1;
+				if(table_old[i-1][j-1])
+					neighbours[table[i-1][j-1]] += 1;
+				if(table_old[i+1][j+1])
+					neighbours[table[i+1][j+1]] += 1;
+				break;
+			case 'heksaLos':
+				var los = Math.floor(Math.random() * 2);
+				switch(los){
+					case 0:
+						if(table_old[i-1][j])
+							neighbours[table[i-1][j]] += 1;
+						if(table_old[i+1][j])
+							neighbours[table[i+1][j]] += 1;
+						if(table_old[i][j-1])
+							neighbours[table[i][j-1]] += 1;
+						if(table_old[i][j+1])
+							neighbours[table[i][j+1]] += 1;
+						if(table_old[i-1][j+1])
+							neighbours[table[i-1][j+1]] += 1;
+						if(table_old[i+1][j-1])
+							neighbours[table[i+1][j-1]] += 1;
+						break;
+					case 1:
+						if(table_old[i-1][j])
+							neighbours[table[i-1][j]] += 1;
+						if(table_old[i+1][j])
+							neighbours[table[i+1][j]] += 1;
+						if(table_old[i][j-1])
+							neighbours[table[i][j-1]] += 1;
+						if(table_old[i][j+1])
+							neighbours[table[i][j+1]] += 1;
+						if(table_old[i-1][j-1])
+							neighbours[table[i-1][j-1]] += 1;
+						if(table_old[i+1][j+1])
+							neighbours[table[i+1][j+1]] += 1;
+						break;
+				}
+				break;
+		}
+
+		return neighbours.indexOf(Math.max(...neighbours));
+	}
+	
+	function setColors(){
+		dx = parseInt(15000000/zarodki);
+		color[0] = 'white';
+		for(var k = 0;k < zarodki; k++){
+			var value = (k+1) * dx;
+			value = value.toString(16);
+			if(value.length == 5)
+				value = '0' + value;
+			color[k+1] = '#' + value;
+		}
+		console.log(color);
+	}
+	
+})
+</script>

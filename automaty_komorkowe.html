@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+td {
+	border:1px solid black;
+}
+.filled {
+	background-color:red;
+}
+table {
+	border-collapse: collapse;
+	width:100%;
+
+}
+.contener {
+	width:90%;
+	margin-left: auto;
+    margin-right: auto;
+}
+redbg {
+	background-color:red;
+}
+</style>
+<meta charset="UTF-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<title>Page Title</title>
+</head>
+<body>
+<form>
+	<label>Długość wektora:</label>
+	<input id="szerokosc" type="text" name="length" /></br>
+	<label>Czas życia(s):</label>
+	<input id="wysokosc" type="text" name="periods" /></br>
+	<label>Reguła:</label>
+	<input id="regula" type="text" name="rule" /></br>
+	<button id="start">Start</button>
+</form>
+</br><hr/></br>
+<div class="contener"></div>
+</body>
+</html> 
+<script type="text/javascript">
+    $(function(){
+		$('#start').on('click', function(e){
+			e.preventDefault();
+			var len = parseInt($('#szerokosc').val());
+			var periods = parseInt($('#wysokosc').val());
+			var table = [];
+			var ruleType = parseInt($('#regula').val());
+			var rules = createRules(ruleType);
+			console.log(rules);
+			for(var i=0;i< periods;++i){
+			table[i] =[];
+				for(var j=0;j< len;++j){
+					table[i][j] = [];
+					table[i][j]['val'] = '0';
+					table[i][j]['pos'] = 'mid';
+					if(j == 0)
+						table[i][j]['pos'] = 'left';
+					else if(j == len - 1)
+						table[i][j]['pos'] = 'right';
+				}
+			}
+			table[0][parseInt(len/2)]['val'] = '1';
+			$('.contener').append(generujMape(table, len, periods));
+			for(var i=1;i< periods;++i){
+				setTimeout(period, i*500, table, rules, len, i);
+			}
+		});
+
+		function createRules(ruleType){
+			var ruletable=[];
+			var bin = (parseInt(ruleType)).toString(2);
+			var zeros = 8 - bin.length;
+			for(var j = 0;j < zeros; ++j){
+				bin = '0' + bin;
+			}
+			console.log(bin);
+			bin = bin.split("").reverse().join("");
+			for(i = 0; i < 8; ++i){
+				ruletable[i] = parseInt(bin[i]);
+			}
+			return ruletable;
+		}
+		
+		function setval(ruleCase){
+			var number = parseInt(ruleCase, 2);
+			return number;
+		}
+		
+		function generujMape(table, len, periods){
+			var map = '<table style="">';
+			var height = (parseInt($('.contener').css('width').replace('px', '')) / len) - 4;
+			console.log(height);
+			for(var i=0;i< periods;++i){
+				var row = '<tr>';
+				for(var j=0;j< len;++j){
+					if(table[i][j]['val'] == "1")
+						var cell = '<td style="background-color:red;height:' + height + 'px;"></td>';
+					else
+						var cell = '<td style="height:' + height + 'px;"></td>';
+					row += cell;
+				}
+				row += '</tr>';
+				map += row;
+			}
+			map += '</table>';
+			return map;
+		}
+		
+		function setVal(i, j, val){
+			if(val == 1){
+				var that = $('.contener').find("table").find("tr").eq(i).find("td").eq(j);
+				$(that).css("background-color", "red")
+			}
+		}
+		
+		function period(table, rules, len, i){
+			for(var j=0;j< len;++j){
+				switch(table[i][j]['pos']){
+					case 'mid':
+						var rule = table[i-1][j-1]['val'] + table[i-1][j]['val'] + table[i-1][j+1]['val'];
+						table[i][j]['val'] = rules[setval(rule)].toString();
+						//console.log(table[i][j]['val']);
+						setVal(i, j, table[i][j]['val']);
+						break;
+					case 'left':
+						var rule = '0' + table[i-1][j]['val'] + table[i-1][j+1]['val'];
+						table[i][j]['val'] = rules[setval(rule)].toString();
+						//console.log(table[i][j]['val']);
+						setVal(i, j, table[i][j]['val']);
+						break;
+					case 'right':
+						var rule = table[i-1][j-1]['val'] + table[i-1][j]['val'] + '0';
+						table[i][j]['val'] = rules[setval(rule)].toString();
+						//console.log(table[i][j]['val']);
+						setVal(i, j, table[i][j]['val']);
+						break;
+				}
+			}
+		}
+	});
+	
+</script>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+td {
+	border:1px solid black;
+}
+.filled {
+	background-color:red;
+}
+table {
+	border-collapse: collapse;
+	width:100%;
+
+}
+.contener {
+	width:90%;
+	margin-left: auto;
+    margin-right: auto;
+		text-align:center;
+
+}
+redbg {
+	background-color:red;
+}
+form{
+	width:90%;
+	margin-left: auto;
+    margin-right: auto;
+	text-align:center;
+}
+</style>
+<meta charset="UTF-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<title>Page Title</title>
+</head>
+<body>
+<form>
+	<label>Szerokość:</label>
+	<input id="szerokosc" type="text" name="length" /></br>
+	<label>Długość</label>
+	<input id="dlugosc" type="text" name="periods" /></br>
+	<label>Stan początkowy</label>
+	<select id="stan" placeholder="Wybierz stan początkowy">
+		<option selected disabled hidden></option>
+		<option value="glider">Glider</option>
+		<option value="niezmienne">Niezmienne</option>
+		<option value="oscylator">Oscylator</option>
+		<option value="losowy">Losowy</option>
+		<option value="reczna">Ręczna definicja</option>
+	</select><br>
+	<label>Czas iteracji (ms)</label>
+	<input id="time" type="text" name="time" /></br>
+	<button id="start">Renderuj</button>
+</form>
+</br><hr/></br>
+<div class="contener">
+	<button id="start_game">Start</button>
+</div>
+</body>
+</html> 
+<script type="text/javascript">
+    $(function(){
+		var interwal;
+		var table = [];
+		var table_old = [];
+		var width;
+		var height;
+		$('#start').on('click', function(e){
+			e.preventDefault();
+			width = parseInt($('#szerokosc').val());
+			height = parseInt($('#dlugosc').val());
+			var stan = $('#stan').val();
+			for(var i=0;i< height+2;++i){
+				table[i] =[];
+				table_old[i] =[];
+				for(var j=0;j< width+2;++j){
+					table[i][j] = 0;
+					table_old[i][j] = 0;
+
+				}
+			}
+			switch(stan){
+				case 'glider':
+					glider(table, height, width);
+					render(height, width, table);
+					break;
+				case 'niezmienne':
+					niezmienne(table, height, width);
+					render(height, width, table);
+					break;				
+				case 'oscylator':
+					oscylator(table, height, width);
+					render(height, width, table);
+					break;				
+				case 'losowy':
+					losowy(table, height, width);
+					render(height, width, table);
+					break;
+				case 'reczna':
+					reczna(table, height, width);
+					render(height, width, table);
+					break;
+			}
+		});
+		
+		function render(periods, len, table){
+			var map = '<table style="">';
+			var height = (parseInt($('.contener').css('width').replace('px', '')) / len) - 4;
+			for(var i=1;i< periods + 1;++i){
+				var row = '<tr>';
+				for(var j=1;j< len + 1;++j){
+					if(table[i][j] == 1){
+						var cell = '<td data-row="' + i + '" data-column="' + j + '" style="background-color:black;height:' + height + 'px;"></td>';
+					}
+					else{
+						var cell = '<td data-row="' + i + '" data-column="' + j + '" style="height:' + height + 'px;"></td>';
+					}
+					row += cell;
+				}
+				row += '</tr>';
+				map += row;
+			}
+			map += '</table>';
+			$('#start_game').after(map);
+			var td = $('.contener').find( "td" );
+			$(document).on("click", "td" , changeState);
+		}
+		
+		function glider(table, height, width){
+			table[parseInt(height/2) -1][parseInt(width/2)] = 1;
+			table[parseInt(height/2) -1][parseInt(width/2) + 1] = 1;
+			table[parseInt(height/2)][parseInt(width/2) - 1] = 1;
+			table[parseInt(height/2)][parseInt(width/2)] = 1;
+			table[parseInt(height/2) + 1][parseInt(width/2) + 1] = 1;
+		}
+		
+		function niezmienne(table, height, width){
+			table[parseInt(height/2) -1][parseInt(width/2)] = 1;
+			table[parseInt(height/2) -1][parseInt(width/2) + 1] = 1;
+			table[parseInt(height/2)][parseInt(width/2) - 1] = 1;
+			table[parseInt(height/2)][parseInt(width/2) + 2] = 1;
+			table[parseInt(height/2) +1][parseInt(width/2)] = 1;
+			table[parseInt(height/2) +1][parseInt(width/2) + 1] = 1;
+		}
+		
+		function oscylator(table, height, width){
+			table[parseInt(height/2) -1][parseInt(width/2)] = 1;
+			table[parseInt(height/2)][parseInt(width/2)] = 1;
+			table[parseInt(height/2) + 1][parseInt(width/2)] = 1;
+		}		
+		
+		function losowy(table, height, width){
+			for(var i=0;i<30;i++){
+				var k =	Math.floor(Math.random() * 10); 
+				var j = Math.floor(Math.random() * 10); 
+				table[parseInt(height/2) - 4 + k][parseInt(width/2) - 4 + j] = 1;
+			}
+		}
+		
+		function reczna(table, height, width){
+		
+		}
+		
+		function changeState(){
+			if($(this).css('background-color') == 'rgb(0, 0, 0)'){
+				$(this).css('background-color', 'white');
+				table[$(this).data('row')][$(this).data('column')] = 0;
+			}else{
+				$(this).css('background-color', 'black');
+				table[$(this).data('row')][$(this).data('column')] = 1;
+			}
+		}
+		
+		$('#start_game').on('click', function(e){
+			if($('#start_game').text() == 'Start'){
+				var time = $('#time').val();
+				interwal = setInterval(reRender, time);
+				$('#start_game').text('Stop');
+			}else{
+				clearInterval(interwal); // stop the interval
+				$('#start_game').text('Start');
+			}
+		});
+		
+		function reRender(){
+			for(var i=0;i< height + 2;++i){
+				for(var j=0;j< width + 2;++j){	
+					table_old[i][j] = table[i][j];
+				}
+			}
+			for(var i=1;i< height + 1;++i){
+				for(var j=1;j< width + 1;++j){				
+					var neighbour = countNeighbour(i, j);
+					if(table[i][j]){
+						if(neighbour != 2 && neighbour != 3){
+							table[i][j] = 0;
+							$('.contener').find('table').find('tr').eq(i-1).find('td').eq(j-1).css("background-color", "white");
+						}
+					}else{
+						if(neighbour == 3){
+							table[i][j] = 1;
+							$('.contener').find('table').find('tr').eq(i-1).find('td').eq(j-1).css("background-color", "black");
+						}
+					}
+				}
+			}
+			table[0][0] = table[height][width];
+			table[height + 1][width + 1] = table[1][1];
+			table[0][width + 1] = table[height][1];
+			table[height + 1][0] = table[1][width];
+			for(i = 1; i < width +1;++i){
+				table[0][i] = table[height][i];
+				table[height+1][i] = table[1][i];
+			}
+			for(i = 1; i < height +1;++i){
+				table[i][0] = table[i][width];
+				table[i][width+1] = table[i][1];
+			}
+			console.log(table);
+		}
+		
+		function countNeighbour(i, j){
+			var counter = 0;
+			counter += table_old[i-1][j-1];
+			counter += table_old[i-1][j];
+			counter += table_old[i-1][j+1];
+			counter += table_old[i+1][j-1];
+			counter += table_old[i+1][j];
+			counter += table_old[i+1][j+1];
+			counter += table_old[i][j+1];
+			counter += table_old[i][j-1];
+			return counter;
+		}
+	});
+</script>
